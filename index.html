@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>有限体上の楕円曲線で足し算を見る</title>
+<meta name="description" content="有限体上の楕円曲線で、点の加法とスカラー倍をインタラクティブに可視化するページ">
+<meta name="theme-color" content="#1d2433">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231d2433'/%3E%3Cg fill='%236b7590'%3E%3Ccircle cx='11' cy='11' r='2.2'/%3E%3Ccircle cx='11' cy='25' r='2.2'/%3E%3Ccircle cx='11' cy='39' r='2.2'/%3E%3Ccircle cx='11' cy='53' r='2.2'/%3E%3Ccircle cx='25' cy='11' r='2.2'/%3E%3Ccircle cx='25' cy='25' r='2.2'/%3E%3Ccircle cx='25' cy='39' r='2.2'/%3E%3Ccircle cx='25' cy='53' r='2.2'/%3E%3Ccircle cx='39' cy='11' r='2.2'/%3E%3Ccircle cx='39' cy='25' r='2.2'/%3E%3Ccircle cx='39' cy='39' r='2.2'/%3E%3Ccircle cx='39' cy='53' r='2.2'/%3E%3Ccircle cx='53' cy='11' r='2.2'/%3E%3Ccircle cx='53' cy='25' r='2.2'/%3E%3Ccircle cx='53' cy='39' r='2.2'/%3E%3Ccircle cx='53' cy='53' r='2.2'/%3E%3C/g%3E%3Cline x1='11' y1='39' x2='39' y2='11' stroke='%23ff7a9c' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='11' cy='39' r='5.5' fill='%235b9bff'/%3E%3Ccircle cx='39' cy='11' r='5.5' fill='%23ffa04d'/%3E%3Ccircle cx='53' cy='25' r='5.5' fill='%233dd6a0'/%3E%3C/svg%3E">
+
+<style>
+:root{
+  --bg:#f6f4ee;--surface:#fffdf8;--ink:#1d2433;--muted:#667085;--line:#d9d4c7;
+  --grid:#e6e1d4;--dot:#8a93a6;--curve:#1d2433;
+  --P:#1f6fe0;--Q:#e07a1f;--R:#8a4fd0;--S:#14966a;--lin:#c9446a;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161f;--surface:#1a2030;--ink:#e8ebf2;--muted:#98a2b8;--line:#2e364a;
+  --grid:#262d40;--dot:#6b7590;--curve:#e8ebf2;
+  --P:#5b9bff;--Q:#ffa04d;--R:#b88af0;--S:#3dd6a0;--lin:#ff7a9c;
+}}
+:root[data-theme="dark"]{
+  --bg:#12161f;--surface:#1a2030;--ink:#e8ebf2;--muted:#98a2b8;--line:#2e364a;
+  --grid:#262d40;--dot:#6b7590;--curve:#e8ebf2;
+  --P:#5b9bff;--Q:#ffa04d;--R:#b88af0;--S:#3dd6a0;--lin:#ff7a9c;
+}
+:root{box-sizing:border-box;padding-top:var(--safe-t);padding-bottom:var(--safe-b)}
+html{scroll-padding-top:var(--safe-t)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;line-height:1.7}
+main{max-width:1080px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:0 0 4px;letter-spacing:.02em}
+.eq{font-family:"Cambria Math","STIX Two Math",Georgia,serif;font-size:1.15rem;margin:0 0 16px;color:var(--muted)}
+.layout{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.stage{flex:1 1 440px;min-width:0}
+.panel{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:14px}
+canvas{display:block;width:100%;aspect-ratio:1;background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:crosshair;touch-action:manipulation}
+.status{min-height:1.7em;font-size:.88rem;color:var(--muted);margin-top:6px;font-family:"Cambria Math",Georgia,serif}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+label{font-size:.9rem;display:flex;align-items:center;gap:6px}
+select,input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:3px 6px}
+input[type=number]{width:4.2em}
+button{font:inherit;font-size:.88rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+:focus-visible{outline:2px solid var(--P);outline-offset:2px}
+.warn{color:var(--lin);font-size:.88rem}
+.steps{font-size:.92rem}
+.steps p{margin:.25em 0}
+.m{font-family:"Cambria Math","STIX Two Math",Georgia,serif;font-size:1.02em}
+.cP{color:var(--P)}.cQ{color:var(--Q)}.cR{color:var(--R)}.cS{color:var(--S)}.cL{color:var(--lin)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.help{font-size:.85rem;color:var(--muted);margin:0}
+body[data-mode="mul"] .addOnly{display:none}
+body:not([data-mode="mul"]) .mulOnly{display:none}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;border:0;border-radius:0;padding:8px 10px;background:var(--surface)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+input[type=range]{accent-color:var(--S)}
+.why{margin-top:28px;padding:18px 20px}
+.why h2{font-size:1.15rem;margin:0 0 10px}
+.why p{max-width:46em;margin:.5em 0}
+#cv2{cursor:default;margin:10px 0 6px}
+.why .legend i.ln{width:18px;height:0;border-top:2px dashed var(--muted);border-radius:0;background:none;vertical-align:3px}
+</style>
+</head>
+<body>
+<main>
+  <h1>有限体上の楕円曲線で足し算を見る</h1>
+  <p class="eq">y² ≡ x³ + ax + b (mod p)</p>
+  <div class="layout">
+    <div class="stage">
+      <canvas id="cv" aria-label="楕円曲線上の点のグリッド"></canvas>
+      <div class="status" id="st">曲線上の点をクリックして P, Q を選びます</div>
+    </div>
+    <div class="panel">
+      <div class="seg" role="group" aria-label="モード">
+        <button id="tAdd" aria-pressed="true">加法 P + Q</button>
+        <button id="tMul" aria-pressed="false">スカラー倍 kP</button>
+      </div>
+      <div class="box">
+        <div class="row">
+          <label>p <select id="selP"></select></label>
+          <label>a <input type="number" id="inA" value="1"></label>
+          <label>b <input type="number" id="inB" value="1"></label>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="bRand">ランダムな曲線</button>
+          <button id="bDbl" class="addOnly">Q = P にする (2P)</button>
+          <button id="bNeg" class="addOnly">Q = −P にする</button>
+        </div>
+        <p class="warn" id="warn" style="margin:8px 0 0"></p>
+        <p class="m" id="info" style="margin:6px 0 0;font-size:.95rem"></p>
+      </div>
+      <div class="box mulOnly">
+        <div class="row">
+          <label>k <input type="number" id="inK" min="1" value="3"></label>
+          <input type="range" id="rgK" min="1" max="20" value="3" style="flex:1;min-width:120px" aria-label="k">
+          <button id="bPlay">▶ 再生</button>
+        </div>
+        <p class="help" style="margin-top:6px">曲線上の点をクリックして P を選び、k を動かすと kP が移動します。P から 2P, 3P, … と順に跳ぶ経路も表示されます。</p>
+      </div>
+      <div class="box steps" id="steps"></div>
+      <div class="box addOnly">
+        <label><input type="checkbox" id="ckMul"> P の倍数 kP を順に表示</label>
+        <p class="help" id="mulInfo" style="margin-top:4px"></p>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--P)"></i>P</span>
+        <span class="addOnly"><i style="background:var(--Q)"></i>Q</span>
+        <span class="addOnly"><i style="background:var(--R)"></i>直線と曲線の3つ目の交点 R</span>
+        <span class="addOnly"><i style="background:var(--S)"></i>P + Q (R の x 軸反転)</span>
+        <span class="mulOnly"><i style="background:var(--R)"></i>P, 2P, 3P, … の経路</span>
+        <span class="mulOnly"><i style="background:var(--S)"></i>kP (結果)</span>
+        <span class="addOnly"><i style="background:var(--lin)"></i>直線 (mod p で折り返す)</span>
+      </div>
+      <p class="help addOnly">実数の曲線と違い、点は格子状に散らばります。2点を通る直線も y = λx + c (mod p) の点列として現れ、画面の端で反対側に折り返します。薄い線は折り返す前の元の直線で、これが mod p で畳まれて点列になります。</p>
+    </div>
+  </div>
+  <section class="box why" id="why">
+    <h2>2点を結ぶ直線が、画面上で2点を結んだ線と違うことがあるのはなぜ?</h2>
+    <p>有限体では、傾きを割り算ではなく mod p の逆元で計算します。λ ≡ (y₂ − y₁) / (x₂ − x₁) (mod p) とは、<b>λ × (x₂ − x₁) ≡ (y₂ − y₁) (mod p) を満たす整数 λ</b> のことです。画面上で2点を結んだときの傾き (y₂ − y₁) / (x₂ − x₁) とは、一般に別の値になります。</p>
+    <p>たとえば p = 23 で、Q が P の右に 2、上に 1 の位置にあるとします。画面上の傾きは 1/2 ですが、2 × 12 = 24 ≡ 1 (mod 23) なので λ = 12 です。直線 y = 12x + c は x が 2 進む間に y が 24 上がり、23 で折り返して Q に届きます。</p>
+    <p>格子は、上下左右が端でつながった世界の一部を切り出したものです。画面上の2点には、折り返し方の違いでいくつもの線が引けますが、足し算に使うのは整数の傾き λ を持つ1本だけです。画面上の傾きが整数になる場合 (右に 1・上に 3 など) に限り、その直線と画面上の直線が一致します。</p>
+    <div id="whyFig" class="addOnly">
+      <canvas id="cv2" aria-label="画面上の直線と mod p の直線の比較図"></canvas>
+      <div class="legend">
+        <span><i class="ln"></i>画面上で P と Q を結んだ線</span>
+        <span><i style="background:var(--lin)"></i>mod p の直線 (折り返す前の形が薄い線、点列が濃い点)</span>
+        <span><i style="background:var(--P)"></i>P</span>
+        <span><i style="background:var(--Q)"></i>Q</span>
+      </div>
+      <div class="steps" id="whyDyn" style="margin-top:10px"></div>
+    </div>
+  </section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d');
+const PRIMES=[11,13,17,19,23,29,31,37,41,53,67,97];
+let p=23,a=1,b=1,pts=[],P=null,Q=null,nextSel='P',hover=null,mode='add',K=3;
+const md=n=>((n%p)+p)%p;
+function inv(n){let r=1,x=md(n),e=p-2;while(e){if(e&1)r=r*x%p;x=x*x%p;e>>=1}return r}
+const same=(u,v)=>u&&v&&u.x===v.x&&u.y===v.y;
+function singular(){return md(4*a*a*a+27*b*b)===0}
+function build(){
+  pts=[];
+  for(let x=0;x<p;x++){const r=md(x*x*x+a*x+b);
+    for(let y=0;y<p;y++) if(md(y*y)===r) pts.push({x,y});}
+  stopPlay();P=pts[0]||null;Q=pts[1]||P;nextSel='P';
+  $('warn').textContent=singular()?'この a, b では特異曲線になります (4a³+27b² ≡ 0)。別の値を選んでください。':'';
+  $('info').textContent='曲線上の点: '+pts.length+' 個 + 無限遠点 O = 群の位数 '+(pts.length+1);
+  update();
+}
+function add(A,B){
+  if(!A)return{S:B,kind:'id'};
+  if(!B)return{S:A,kind:'id'};
+  if(A.x===B.x&&md(A.y+B.y)===0)return{S:null,kind:'vert'};
+  let lam,dbl=same(A,B);
+  lam=dbl?md((3*A.x*A.x+a)*inv(2*A.y)):md((B.y-A.y)*inv(B.x-A.x));
+  const x3=md(lam*lam-A.x-B.x),y3=md(lam*(A.x-x3)-A.y);
+  const c=md(A.y-lam*A.x);
+  return{S:{x:x3,y:y3},R:{x:x3,y:md(-y3)},lam,c,kind:dbl?'dbl':'add'};
+}
+function mulList(A){
+  const out=[A];let cur=A,n=0;
+  while(n++<400){const r=add(cur,A);if(!r.S)break;cur=r.S;out.push(cur);}
+  return out;
+}
+const f=pt=>pt?'('+pt.x+', '+pt.y+')':'O';
+function size(){
+  const w=Math.min(cv.parentElement.clientWidth,720),d=window.devicePixelRatio||1;
+  cv.width=w*d;cv.height=w*d;ctx.setTransform(d,0,0,d,0,0);return w;
+}
+let W=0,pad=26,cell=10;
+const X=x=>pad+(x+.5)*cell, Y=y=>W-pad-(y+.5)*cell;
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function ring(pt,col,r,fill){ctx.beginPath();ctx.arc(X(pt.x),Y(pt.y),r,0,7);
+  if(fill){ctx.fillStyle=col;ctx.fill()}else{ctx.strokeStyle=col;ctx.lineWidth=1.6;ctx.stroke()}}
+function label(pt,t,col,dx,dy){
+  const fs=Math.max(12,cell*.7);ctx.font='600 '+fs+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(t).width+8,h=fs+4,cx=X(pt.x)+dx,cy=Y(pt.y)+dy;
+  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(cx-w/2,cy-h/2,w,h,4);else ctx.rect(cx-w/2,cy-h/2,w,h);
+  ctx.globalAlpha=.94;ctx.fillStyle=css('--surface');ctx.fill();ctx.globalAlpha=1;
+  ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle=css('--ink');ctx.fillText(t,cx,cy);ctx.textBaseline='alphabetic';}
+function draw(){
+  W=size();cell=(W-pad*2)/p;
+  const g=css('--grid'),dot=css('--dot'),ink=css('--muted');
+  ctx.clearRect(0,0,W,W);
+  ctx.lineWidth=1;ctx.strokeStyle=g;
+  for(let i=0;i<p;i++){
+    ctx.beginPath();ctx.moveTo(X(i),pad-cell/2);ctx.lineTo(X(i),W-pad+cell/2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(pad-cell/2,Y(i));ctx.lineTo(W-pad+cell/2,Y(i));ctx.stroke();
+  }
+  ctx.fillStyle=ink;ctx.font='11px sans-serif';ctx.textAlign='center';
+  const step=p>40?10:p>20?5:p>13?2:1;
+  for(let i=0;i<p;i+=step){ctx.fillText(i,X(i),W-pad+cell/2+14);ctx.textAlign='right';ctx.fillText(i,pad-cell/2-4,Y(i)+4);ctx.textAlign='center'}
+  const res=(mode==='add'&&P&&Q)?add(P,Q):null;
+  // 直線
+  if(res&&res.kind!=='id'){
+    // 折り返す前の元の直線を薄く下に描く
+    ctx.save();ctx.beginPath();ctx.rect(pad,pad,W-2*pad,W-2*pad);ctx.clip();
+    ctx.globalAlpha=.35;ctx.strokeStyle=css('--lin');ctx.lineWidth=2;ctx.beginPath();
+    if(res.kind==='vert'){ctx.moveTo(X(P.x),Y(-.5));ctx.lineTo(X(P.x),Y(p-.5));}
+    else{
+      const ls=res.lam>p/2?res.lam-p:res.lam,yb=x=>ls*(x-P.x)+P.y;
+      const y0=yb(-.5),y1=yb(p-.5),lo=Math.min(y0,y1),hi=Math.max(y0,y1);
+      for(let k=Math.floor((-.5-hi)/p);k<=Math.ceil((p-.5-lo)/p);k++){
+        ctx.moveTo(X(-.5),Y(y0+k*p));ctx.lineTo(X(p-.5),Y(y1+k*p));
+      }
+    }
+    ctx.stroke();ctx.restore();
+    ctx.strokeStyle=css('--lin');ctx.lineWidth=1.6;
+    if(res.kind==='vert'){ for(let y=0;y<p;y++) ring({x:P.x,y},css('--lin'),Math.max(2,cell*.18),true) }
+    else for(let x=0;x<p;x++) ring({x,y:md(res.lam*x+res.c)},css('--lin'),Math.max(2,cell*.2),true);
+    if(res.R){ctx.setLineDash([4,4]);ctx.strokeStyle=css('--S');ctx.beginPath();
+      ctx.moveTo(X(res.R.x),Y(res.R.y));ctx.lineTo(X(res.S.x),Y(res.S.y));ctx.stroke();ctx.setLineDash([])}
+  }
+  // 曲線上の点
+  const dc=Math.max(2.6,cell*.26);
+  pts.forEach(pt=>ring(pt,css('--curve'),dc,true));
+  if(hover)ring(hover,ink,dc+3,false);
+  // 倍数
+  if(mode==='add'&&$('ckMul').checked&&P){
+    mulList(P).forEach((m,i)=>{ring(m,css('--R'),dc+2,false);label(m,String(i+1),css('--R'),dc+9,-dc-8)});
+  }
+  if(mode==='mul'&&P){
+    const L=mulList(P),n=L.length+1,k=Math.min(K,n),cnt=Math.min(k,L.length);
+    ctx.save();ctx.globalAlpha=.55;ctx.strokeStyle=css('--R');ctx.lineWidth=1.5;ctx.beginPath();
+    for(let i=0;i<cnt;i++){const m=L[i];if(i)ctx.lineTo(X(m.x),Y(m.y));else ctx.moveTo(X(m.x),Y(m.y))}
+    ctx.stroke();ctx.restore();
+    for(let i=1;i<cnt;i++){const m=L[i];
+      if(i===k-1)continue;
+      ring(m,css('--R'),dc+1.5,false);
+      if(k<=24)label(m,String(i+1),css('--R'),dc+9,-dc-8);
+    }
+    if(k>1&&k<n){const m=L[k-1];ring(m,css('--S'),dc+1.5,true);label(m,k+'P',css('--S'),dc+16,dc+10)}
+    if(k===1)ring(P,css('--S'),dc+5,false);
+  }
+  if(res){
+    if(res.R)ring(res.R,css('--R'),dc+3,false), label(res.R,'R',css('--R'),dc+11,-dc-9);
+    if(res.S)ring(res.S,css('--S'),dc+1.5,true), label(res.S,'P+Q',css('--S'),dc+24,dc+10);
+  }
+  if(P){ring(P,css('--P'),dc+2,true);label(P,'P',css('--P'),-dc-11,-dc-9)}
+  if(Q&&mode==='add'){ring(Q,css('--Q'),dc,true);if(!same(P,Q))label(Q,'Q',css('--Q'),dc+11,-dc-9);}
+}
+function mulSteps(el){
+  if(!P){el.innerHTML='<p>曲線上の点がありません。</p>';return}
+  const L=mulList(P),n=L.length+1,k=Math.min(K,n),kP=k===n?null:L[k-1],bits=k.toString(2);
+  let h='<p><span class="m cP">P = '+f(P)+'</span>　<span class="m">k = '+k+'</span></p>';
+  h+='<p class="m cS"><b>'+k+'P = '+f(kP)+'</b>'+(k===n?'　(P の位数が '+n+' なので '+n+'P = O)':'')+'</p>';
+  h+='<p>倍加加算法 (double-and-add) の計算:</p><p class="m">k = '+k+' = '+bits+'₂</p>';
+  let R=null,ones=0;
+  bits.split('').forEach(bit=>{
+    R=add(R,R).S;let t='ビット '+bit+': 2R = '+f(R);
+    if(bit==='1'){ones++;R=add(R,P).S;t+=' → +P = '+f(R)}
+    h+='<p class="m" style="margin:.1em 0">'+t+'</p>';
+  });
+  h+='<p style="color:var(--muted);font-size:.85rem;margin-top:.5em">倍加 '+(bits.length-1)+' 回、加算 '+(ones-1)+' 回で求まります (最初のビットは P から始めるため)。順に足すと '+(k-1)+' 回かかります。</p>';
+  el.innerHTML=h;
+}
+function steps(){
+  const el=$('steps');
+  if(mode==='mul'){mulSteps(el);return}
+  if(!P||!Q){el.innerHTML='<p>曲線上の点がありません。</p>';return}
+  const r=add(P,Q);
+  let h='<p><span class="m cP">P = '+f(P)+'</span>　<span class="m cQ">Q = '+f(Q)+'</span></p>';
+  if(r.kind==='vert'){
+    h+='<p>P と Q は x 座標が同じで y の和が 0 (mod '+p+')、つまり Q = −P です。2点を通る直線は垂直で、曲線とはもう交わりません。</p><p class="m cS">P + Q = O (無限遠点・単位元)</p>';
+  }else{
+    h+=r.kind==='dbl'
+      ?'<p>P = Q なので接線を使います。</p><p class="m">λ = (3x² + a) / 2y = (3·'+P.x+'² + '+a+') / (2·'+P.y+') ≡ <b class="cL">'+r.lam+'</b></p>'
+      :'<p>2点を通る直線の傾き:</p><p class="m">λ = (y₂ − y₁) / (x₂ − x₁) = ('+Q.y+' − '+P.y+') / ('+Q.x+' − '+P.x+') ≡ <b class="cL">'+r.lam+'</b></p>';
+    h+='<p>直線: <span class="m cL">y ≡ '+r.lam+'x + '+r.c+' (mod '+p+')</span></p>';
+    h+='<p>この直線と曲線の3つ目の交点:</p><p class="m cR">R = (x₃, '+r.R.y+') = '+f(r.R)+'</p>';
+    h+='<p>x 軸で反転して <span class="m">−R = (x₃, −y)</span>:</p><p class="m cS"><b>P + Q = '+f(r.S)+'</b></p>';
+  }
+  el.innerHTML=h;
+}
+function mulInfo(){
+  if(!P){$('mulInfo').textContent='';return}
+  const L=mulList(P);
+  $('mulInfo').textContent='P の位数は '+(L.length+1)+' です。'+(L.length+1)+'P = O になります'+($('ckMul').checked?' (番号 k が kP)。':'。');
+}
+function syncK(){
+  if(mode!=='mul'||!P)return;
+  const n=mulList(P).length+1;K=Math.max(1,Math.min(K,n));
+  $('rgK').max=n;$('inK').max=n;$('rgK').value=K;$('inK').value=K;
+}
+function drawWhy(){
+  const c=$('cv2'),fig=$('whyFig'),dyn=$('whyDyn');
+  const w=Math.min(fig.clientWidth,480);if(w<50)return;
+  const g=c.getContext('2d'),d=window.devicePixelRatio||1;
+  c.style.width=w+'px';c.style.height=w+'px';c.width=w*d;c.height=w*d;g.setTransform(d,0,0,d,0,0);
+  const pd=14,cl=(w-pd*2)/p,gx=x=>pd+(x+.5)*cl,gy=y=>w-pd-(y+.5)*cl;
+  g.strokeStyle=css('--grid');g.lineWidth=1;
+  for(let i=0;i<p;i++){g.beginPath();g.moveTo(gx(i),pd);g.lineTo(gx(i),w-pd);g.stroke();g.beginPath();g.moveTo(pd,gy(i));g.lineTo(w-pd,gy(i));g.stroke()}
+  const dot=(pt,col,r)=>{g.beginPath();g.arc(gx(pt.x),gy(pt.y),r,0,7);g.fillStyle=col;g.fill()};
+  pts.forEach(pt=>dot(pt,css('--dot'),Math.max(1.8,cl*.16)));
+  if(!P||!Q){dyn.textContent='';return}
+  const dc=Math.max(3,cl*.28);
+  if(same(P,Q)){
+    dot(P,css('--P'),dc+1);
+    dyn.innerHTML='<p>いまは P = Q なので、2点を結ぶ直線は作れません。代わりに接線を使います。</p>';return;
+  }
+  const r=add(P,Q),lc=css('--lin');
+  g.save();g.beginPath();g.rect(pd,pd,w-2*pd,w-2*pd);g.clip();
+  g.globalAlpha=.4;g.strokeStyle=lc;g.lineWidth=2;g.beginPath();
+  if(r.kind==='vert'){g.moveTo(gx(P.x),gy(-.5));g.lineTo(gx(P.x),gy(p-.5))}
+  else{
+    const ls=r.lam>p/2?r.lam-p:r.lam,yb=x=>ls*(x-P.x)+P.y;
+    const y0=yb(-.5),y1=yb(p-.5),lo=Math.min(y0,y1),hi=Math.max(y0,y1);
+    for(let k=Math.floor((-.5-hi)/p);k<=Math.ceil((p-.5-lo)/p);k++){g.moveTo(gx(-.5),gy(y0+k*p));g.lineTo(gx(p-.5),gy(y1+k*p))}
+  }
+  g.stroke();g.restore();
+  if(r.kind==='vert')for(let y=0;y<p;y++)dot({x:P.x,y},lc,Math.max(2,cl*.18));
+  else for(let x=0;x<p;x++)dot({x,y:md(r.lam*x+r.c)},lc,Math.max(2,cl*.18));
+  g.setLineDash([5,4]);g.strokeStyle=css('--muted');g.lineWidth=2;g.beginPath();
+  g.moveTo(gx(P.x),gy(P.y));g.lineTo(gx(Q.x),gy(Q.y));g.stroke();g.setLineDash([]);
+  dot(P,css('--P'),dc+1);dot(Q,css('--Q'),dc+1);
+  if(r.kind==='vert'){dyn.innerHTML='<p>P と Q は x 座標が同じなので、2点を結ぶ直線は垂直線です。傾きは定義されず、結果は O になります。</p>';return}
+  const dx=Q.x-P.x,dy=Q.y-P.y,s=dy/dx,isInt=Number.isInteger(s),lam=r.lam;
+  dyn.innerHTML=
+    '<p class="m">画面上の傾き = Δy / Δx = '+dy+' / '+dx+(isInt?' = '+s:' ≈ '+s.toFixed(2))+'</p>'+
+    '<p class="m">mod '+p+' での傾き λ = <b class="cL">'+lam+'</b>　(検算: λ·Δx = '+lam+'·'+dx+' = '+(lam*dx)+' ≡ '+md(lam*dx)+'、Δy ≡ '+md(dy)+')</p>'+
+    '<p>'+(isInt
+      ?'画面上の傾きが整数なので、λ はその値 (mod '+p+') と一致し、折り返しを除けば画面上の直線と同じ向きになります。'
+      :'画面上の傾きが整数ではないので、λ とは別の値です。λ の直線は、画面上の2点を結ぶ線とは違う線を通り、折り返しながら Q に届きます。')+'</p>';
+}
+function update(){syncK();steps();mulInfo();draw();drawWhy();}
+function pick(e){
+  const r=cv.getBoundingClientRect(),k=W/r.width;
+  const mx=(e.clientX-r.left)*k,my=(e.clientY-r.top)*k;
+  let best=null,bd=1e9;
+  pts.forEach(pt=>{const d=Math.hypot(X(pt.x)-mx,Y(pt.y)-my);if(d<bd){bd=d;best=pt}});
+  return bd<Math.max(cell*.8,14)?best:null;
+}
+cv.addEventListener('click',e=>{
+  const pt=pick(e);if(!pt)return;
+  if(mode==='mul'||nextSel==='P'){P=pt;nextSel=mode==='mul'?'P':'Q'}else{Q=pt;nextSel='P'}
+  update();stat();
+});
+cv.addEventListener('mousemove',e=>{
+  const pt=pick(e);if(!same(pt,hover)||(!pt&&hover)){hover=pt;draw()}
+  stat();
+});
+function stat(){
+  $('st').textContent=(hover?f(hover)+'　':'')+(mode==='mul'?'クリックで P を選択':'次のクリックで '+nextSel+' を選択');
+}
+// 設定
+PRIMES.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v===p)o.selected=true;$('selP').appendChild(o)});
+$('selP').onchange=()=>{p=+$('selP').value;a=md(a);b=md(b);$('inA').value=a;$('inB').value=b;build();stat()};
+['inA','inB'].forEach(id=>$(id).onchange=()=>{a=md(Math.round(+$('inA').value||0));b=md(Math.round(+$('inB').value||0));$('inA').value=a;$('inB').value=b;build();stat()});
+$('bRand').onclick=()=>{
+  do{a=Math.floor(Math.random()*p);b=Math.floor(Math.random()*p)}while(singular());
+  $('inA').value=a;$('inB').value=b;build();stat();
+};
+$('bDbl').onclick=()=>{if(P){Q=P;update()}};
+$('bNeg').onclick=()=>{if(P){Q=pts.find(t=>t.x===P.x&&t.y===md(-P.y));update()}};
+$('ckMul').onchange=update;
+window.addEventListener('resize',()=>{draw();drawWhy()});
+let timer=null;
+function stopPlay(){if(timer){clearInterval(timer);timer=null}$('bPlay').textContent='▶ 再生'}
+function setMode(m){
+  mode=m;document.body.dataset.mode=m;stopPlay();
+  $('tAdd').setAttribute('aria-pressed',m==='add');$('tMul').setAttribute('aria-pressed',m==='mul');
+  nextSel='P';update();stat();
+}
+$('tAdd').onclick=()=>setMode('add');
+$('tMul').onclick=()=>setMode('mul');
+$('rgK').oninput=()=>{K=+$('rgK').value;update()};
+$('inK').onchange=()=>{K=Math.max(1,Math.round(+$('inK').value||1));update()};
+$('bPlay').onclick=()=>{
+  if(timer){stopPlay();return}
+  if(!P)return;
+  if(K>=mulList(P).length+1)K=1;
+  update();$('bPlay').textContent='■ 停止';
+  timer=setInterval(()=>{if(K>=mulList(P).length+1){stopPlay();return}K++;update()},700);
+};
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{draw();drawWhy()});
+build();stat();
+</script>
+</body>
+</html>
